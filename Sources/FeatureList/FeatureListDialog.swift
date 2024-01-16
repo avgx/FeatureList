@@ -10,10 +10,14 @@ import SwiftUI
 struct FeatureListDialog: View {
     @Environment(\.dismiss) private var dismiss
     
-    @State
-    var data: [Model] = mockData
+    @Binding
+    var models: [Model]
     
-    @State private var editMode: EditMode = .active
+    @State 
+    private var draggedModel: String?
+    
+    @State
+    private var editMode: EditMode = .active
     
     var body: some View {
         if #available(iOS 16.0, *) {
@@ -28,54 +32,50 @@ struct FeatureListDialog: View {
             .navigationViewStyle(.stack)
         }
     }
-    
+
     @ViewBuilder
     var content: some View {
-        VStack {
-            List {
-                Section {
-                    ForEach(data.prefix(3), id: \.title) { item in
-                        HStack(spacing: 8) {
-                            Button(action: { }) {
-                                Image(systemName: "minus.circle.fill")
-                                    .tint(Color(UIColor.systemRed))
+        ScrollView {
+            LazyVStack {
+                ForEach(models, id: \.id) { model in
+                    if model.id == "Other" {
+                        VStack {
+                            HStack {
+                                Text(model.title)
+                                    .padding()
+                                    .font(.bold(.title2)())
+                                    .padding([.top])
+                                    .id(model.id)
+                                Spacer()
                             }
-                            Row(model: item)
-                                .frame(maxWidth: .infinity)
-                            Spacer()
+                            RoundedRectangle(cornerRadius: 1)
+                                .foregroundColor( Color( UITableView().separatorColor ?? .gray) )
+                                .frame(height: 1)
                         }
                     }
-                    .onMove { moveItem(from: $0, to: $1) }
-                    //                        .onDelete { deleteItem(at: $0) }
-                }
-                Section(header: Text("Other")){
-                    ForEach(data.suffix(data.count - 3), id: \.title) { item in
-                        HStack(spacing: 8) {
-                            Button(action: { }) {
-                                Image(systemName: "plus.circle.fill")
-                                    .tint(Color(UIColor.systemGreen))
-                            }
-                            Row(model: item)
-                        }
+                    else {
+                        Row(model: model, models: $models, draggedModel: $draggedModel)
+                            .id(model.id)
+                            .environment(\.editMode, $editMode)
                     }
-                    .onMove { moveItem(from: $0, to: $1) }
-                    //                        .onDelete { deleteItem(at: $0) }
                 }
-                
             }
-            .listRowInsets(.init(top: 0, leading: 0, bottom: 0, trailing: 0))
+            .padding()
             VStack {
                 Text("Navigation preview")
                     .font(.title2)
+                    .bold()
                 TabView(selection: .constant(-1)) {
-                    ForEach(data.prefix(3), id: \.title) { item in
-                        Text("")
-                            .tabItem {
-                                Image(systemName: item.image)
-                                Text(item.title)
-                            }
-                            .tag(item.id)
-                            .tint(.accentColor)
+                    ForEach(models, id: \.title) { item in
+                        if isItemBeforeOther(model: item) {
+                            Text("")
+                                .tabItem {
+                                    Image(systemName: item.image)
+                                    Text(item.title)
+                                }
+                                .tag(item.id)
+                                .tint(.accentColor)
+                        }
                     }
                     Text("")
                         .tabItem {
@@ -90,8 +90,6 @@ struct FeatureListDialog: View {
                 .frame(maxWidth: .infinity)
             }
         }
-            
-            //.listStyle(.grouped)
             .navigationTitle("Edit navigation")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -105,30 +103,27 @@ struct FeatureListDialog: View {
                 }
             }
             .deleteDisabled(true)
-            //You need to be careful, and make sure .environment(\.editMode, self.$isEditMode) comes after .navigationBarItems(trailing: EditButton()).
-            //https://stackoverflow.com/a/57498356/2060780
             .environment(\.editMode, $editMode)
-            //.frame(maxHeight: 300)    
             .onChange(of: editMode, perform: { value in
               if value.isEditing {
-                 // Entering edit mode (e.g. 'Edit' tapped)
               } else {
-                 // Leaving edit mode (e.g. 'Done' tapped)
                   dismiss()
               }
             })
     }
     
-    func moveItem(from source: IndexSet, to destination: Int) {
-        //fruits.move(fromOffsets: source, toOffset: destination)
-        print("move \(source.first) -> \(destination)")
-    }
-    func deleteItem(at offset: IndexSet) {
-        //fruits.remove(atOffsets: offset)
-        print("delete \(offset.first)")
+    private func isItemBeforeOther(model: Model) -> Bool {
+        guard let otherIndex: Int = models.firstIndex(where: { element in
+                element.id == "Other"
+            }),
+            let actualIndex: Int = models.firstIndex(where: { element in
+                element.title == model.title
+            })
+        else { return false }
+        return actualIndex < otherIndex
     }
 }
 
 #Preview {
-    FeatureListDialog()
+    FeatureListDialog(models: Binding<[Model]>.constant(mockData))
 }

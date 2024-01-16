@@ -2,7 +2,11 @@
 // https://docs.swift.org/swift-book
 import SwiftUI
 
-struct FeatureList: View {
+public struct FeatureList: View {
+    
+    public init() {
+        
+    }
     
     @State
     var edit: Bool = false
@@ -10,13 +14,24 @@ struct FeatureList: View {
     @State
     var model: [Model] = mockData
     
-    var body: some View {
+    public var body: some View {
         Section(content: {
             ForEach(model, id: \.title) { item in
-                Row(model: item)
-                    .onTapGesture {
-                        print(item.id)
+                if item.title == "Other" {
+                    Text(item.title)
+                        .font(.bold(.title2)())
+                        .padding([.top])
+                        .id(item.id)
+                } else {
+                    HStack {
+                        Image(systemName: item.image)
+                        Text(item.title)
+                            .font(.system(.title3, design: .rounded))
+                            .lineLimit(1)
+                        Spacer()
                     }
+                    .id(item.id)
+                }
             }
         }, header: {
             HStack {
@@ -30,7 +45,7 @@ struct FeatureList: View {
             print("onDismiss")
             edit = false
         }, content: {
-            FeatureListDialog()
+            FeatureListDialog(models: $model)
         })
     }
 }

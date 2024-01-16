@@ -13,11 +13,11 @@ struct Model: Identifiable {
     let title: String
 }
 
-
 let mockData: [Model] = [
     .init(id: "Map", image: "globe", title: "Map"),
     .init(id: "Plan", image: "map", title: "Plan"),
     .init(id: "Dashboards", image: "square.grid.3x3.fill", title: "Dashboards"),
+    .init(id: "Other", image: "x.circle", title: "Other"),
     .init(id: "Cameras", image: "video.fill", title: "Cameras"),
     .init(id: "All cameras", image: "video.fill.badge.ellipsis", title: "All cameras"),
     .init(id: "Actions", image: "bolt.fill", title: "Actions"),
