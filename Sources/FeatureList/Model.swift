@@ -7,10 +7,17 @@
 
 import Foundation
 
-struct Model: Identifiable {
-    let id: String
-    let image: String
-    let title: String
+public struct Model: Identifiable {
+    
+    public init(id: String, image: String, title: String) {
+        self.id = id
+        self.image = image
+        self.title = title
+    }
+    
+    public let id: String
+    public let image: String
+    public let title: String
 }
 
 let mockData: [Model] = [

@@ -4,15 +4,18 @@ import SwiftUI
 
 public struct FeatureList: View {
     
-    public init() {
-        
+    public init(model: [Model]) {
+        self.model = model
     }
     
     @State
-    var edit: Bool = false
+    private var edit: Bool = false
     
     @State
-    var model: [Model] = mockData
+    private var selectedItem: Model?
+    
+    @State
+    public var model: [Model]
     
     public var body: some View {
         Section(content: {
@@ -31,6 +34,9 @@ public struct FeatureList: View {
                         Spacer()
                     }
                     .id(item.id)
+                    .onTapGesture {
+                        selectedItem = item
+                    }
                 }
             }
         }, header: {
@@ -39,6 +45,20 @@ public struct FeatureList: View {
                 Button(action: { edit.toggle() }) {
                     Image(systemName: "arrow.up.and.down.text.horizontal")
                 }
+            }
+        })
+        .fullScreenCover(item: $selectedItem, content: { item in
+            NavigationView {
+                Text(item.title)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button(action: {
+                                selectedItem = nil
+                            }) {
+                                Image(systemName: "xmark")
+                            }
+                        }
+                    }
             }
         })
         .sheet(isPresented: $edit, onDismiss: {
@@ -59,7 +79,7 @@ public struct FeatureList: View {
                     Text("Tap to open screen")
                 }
                 
-                FeatureList()
+                FeatureList(model: mockData)
             }
         }
         .navigationViewStyle(.stack)
