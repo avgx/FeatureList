@@ -35,8 +35,8 @@ struct FeatureListDialog: View {
 
     @ViewBuilder
     var content: some View {
-        ScrollView {
-            LazyVStack {
+        VStack {
+            List {
                 ForEach(models, id: \.id) { model in
                     if model.id == "Other" {
                         VStack {
@@ -45,27 +45,28 @@ struct FeatureListDialog: View {
                                     .padding()
                                     .font(.bold(.title2)())
                                     .padding([.top])
-                                    .id(model.id)
                                 Spacer()
                             }
-                            RoundedRectangle(cornerRadius: 1)
-                                .foregroundColor( Color( UITableView().separatorColor ?? .gray) )
-                                .frame(height: 1)
                         }
+                        .id(model.id)
+                        .moveDisabled(true)
                     }
                     else {
-                        Row(model: model, models: $models, draggedModel: $draggedModel)
+                        Row(model: model)
                             .id(model.id)
                             .environment(\.editMode, $editMode)
                     }
                 }
+                .onMove(perform: { indices, newOffset in
+                    moveItem(from: indices, to: newOffset)
+                })
             }
-            .padding()
+            .id(UUID())
             VStack {
                 Text("Navigation preview")
                     .font(.title2)
                     .bold()
-                TabView(selection: .constant(-1)) {
+                TabView(selection: .constant("Plan")) {
                     ForEach(models, id: \.title) { item in
                         if isItemBeforeOther(model: item) {
                             Text("")
@@ -74,7 +75,7 @@ struct FeatureListDialog: View {
                                     Text(item.title)
                                 }
                                 .tag(item.id)
-                                .tint(.accentColor)
+                                .tint(Color(red: 153 / 255, green: 153 / 255, blue: 153 / 255))
                         }
                     }
                     Text("")
@@ -83,8 +84,9 @@ struct FeatureListDialog: View {
                             Text("profile")
                         }
                         .tag("profile")
-                        .tint(.accentColor)
+                        .tint(Color(red: 153 / 255, green: 153 / 255, blue: 153 / 255))
                 }
+                .tint(Color(red: 153 / 255, green: 153 / 255, blue: 153 / 255))
                 .disabled(true)
                 .frame(height: 44)
                 .frame(maxWidth: .infinity)
@@ -121,6 +123,24 @@ struct FeatureListDialog: View {
             })
         else { return false }
         return actualIndex < otherIndex
+    }
+    
+    private func moveItem(from source: IndexSet, to destination: Int) {
+        models.move(fromOffsets: source, toOffset: destination)
+        let otherIndex = checkOtherIndex()
+        if let moveIndex = source.first,
+           otherIndex < 2,
+           moveIndex <= otherIndex {
+            models.move(fromOffsets: IndexSet(integer: destination - 1), toOffset: moveIndex)
+        }
+    }
+    
+    private func checkOtherIndex() -> Int {
+        guard let otherIndex: Int = models.firstIndex(where: { element in
+                element.id == "Other"
+            })
+        else { return -1 }
+        return otherIndex
     }
 }
 
