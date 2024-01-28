@@ -3,40 +3,33 @@
 import SwiftUI
 
 public struct FeatureList: View {
+    let openFullScreen: (Model) -> ()
     
-    public init(model: [Model]) {
-        self.model = model
+    public init(model: Binding<[Model]>, openFullScreen: @escaping (Model) -> ()) {
+        self._model = model
+        self.openFullScreen = openFullScreen
     }
     
     @State
     private var edit: Bool = false
     
-    @State
-    private var selectedItem: Model?
-    
-    @State
+    @Binding
     public var model: [Model]
     
     public var body: some View {
         Section(content: {
             ForEach(model, id: \.title) { item in
-                if item.title == "Other" {
+                if item == Model.other || item == Model.selected {
                     Text(item.title)
                         .font(.bold(.title2)())
                         .padding([.top])
                         .id(item.id)
                 } else {
-                    HStack {
-                        Image(systemName: item.image)
-                        Text(item.title)
-                            .font(.system(.title3, design: .rounded))
-                            .lineLimit(1)
-                        Spacer()
-                    }
-                    .id(item.id)
-                    .onTapGesture {
-                        selectedItem = item
-                    }
+                    Row(model: item)
+                        .id(item.id)
+                        .onTapGesture {
+                            openFullScreen(item)
+                        }
                 }
             }
         }, header: {
@@ -45,20 +38,6 @@ public struct FeatureList: View {
                 Button(action: { edit.toggle() }) {
                     Image(systemName: "arrow.up.and.down.text.horizontal")
                 }
-            }
-        })
-        .fullScreenCover(item: $selectedItem, content: { item in
-            NavigationView {
-                Text(item.title)
-                    .toolbar {
-                        ToolbarItem(placement: .cancellationAction) {
-                            Button(action: {
-                                selectedItem = nil
-                            }) {
-                                Image(systemName: "xmark")
-                            }
-                        }
-                    }
             }
         })
         .sheet(isPresented: $edit, onDismiss: {
@@ -79,7 +58,7 @@ public struct FeatureList: View {
                     Text("Tap to open screen")
                 }
                 
-                FeatureList(model: mockData)
+                FeatureList(model: Binding.constant(mockData), openFullScreen: { x in })
             }
         }
         .navigationViewStyle(.stack)

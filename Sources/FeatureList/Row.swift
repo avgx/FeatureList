@@ -13,21 +13,21 @@ struct Row: View {
     var body: some View {
         VStack {
             HStack {
-                Image(systemName: model.image)
-                Text(model.title)
-                    .font(.system(.title3, design: .rounded))
-                    .lineLimit(1)
+                if model == Model.other || model == Model.selected {
+                    Text(model.title)
+                        .font(.bold(.title2)())
+                        .padding([.top])
+                } else {
+                    Image(systemName: model.image)
+                    Text(model.title)
+                        .font(.system(.title3, design: .rounded))
+                        .lineLimit(1)
+                }
                 Spacer()
             }
             .frame(maxWidth: .infinity)
         }
     }
-    
-}
-
-private var bindModel: Binding<String?> = Binding<String?>.init {
-    ""
-} set: { _ in
     
 }
 

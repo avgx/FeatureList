@@ -9,6 +9,13 @@ import SwiftUI
 import FeatureList
 
 struct ContentView: View {
+    
+    @AppStorage("settingsData")
+    private var settingsData: [Model] = testData
+    
+    @State
+    private var selectedItem: Model?
+    
     var body: some View {
         Group {
             NavigationView {
@@ -17,16 +24,37 @@ struct ContentView: View {
                         Text("Select screens order with button")
                         Text("Tap to open screen")
                     }
-                    FeatureList(model: testData)
+                    FeatureList(model: $settingsData, openFullScreen: openFullScreen)
+                        .fullScreenCover(item: $selectedItem) { item in
+                            NavigationView {
+                                Text(item.title)
+                                    .toolbar {
+                                        ToolbarItem(placement: .cancellationAction) {
+                                            Button(action: {
+                                                selectedItem = nil
+                                            }) {
+                                                Image(systemName: "xmark")
+                                            }
+                                        }
+                                    }
+                            }
+                        }
                 }
+                .navigationViewStyle(.stack)
             }
-            .navigationViewStyle(.stack)
+            .tint(Color.orange)
         }
-        .tint(Color.orange)
+        
+    }
+
+    private func openFullScreen(item : Model) {
+        selectedItem = item
     }
 }
 
-let testData: [Model] = [.init(id: "Map", image: "globe", title: "Map"),
+let testData: [Model] = [
+                .init(id: "Selected", image: "x.circle", title: "Selected"),
+                .init(id: "Map", image: "globe", title: "Map"),
                 .init(id: "Plan", image: "map", title: "Plan"),
                 .init(id: "Dashboards", image: "square.grid.3x3.fill", title: "Dashboards"),
                 .init(id: "Other", image: "x.circle", title: "Other"),
