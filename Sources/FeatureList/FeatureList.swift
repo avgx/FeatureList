@@ -2,21 +2,35 @@
 // https://docs.swift.org/swift-book
 import SwiftUI
 
-struct FeatureList: View {
+public struct FeatureList: View {
+    let openFullScreen: (Model) -> ()
+    
+    public init(model: Binding<[Model]>, openFullScreen: @escaping (Model) -> ()) {
+        self._model = model
+        self.openFullScreen = openFullScreen
+    }
     
     @State
-    var edit: Bool = false
+    private var edit: Bool = false
     
-    @State
-    var model: [Model] = mockData
+    @Binding
+    public var model: [Model]
     
-    var body: some View {
+    public var body: some View {
         Section(content: {
             ForEach(model, id: \.title) { item in
-                Row(model: item)
-                    .onTapGesture {
-                        print(item.id)
-                    }
+                if item == Model.other || item == Model.selected {
+                    Text(item.title)
+                        .font(.bold(.title2)())
+                        .padding([.top])
+                        .id(item.id)
+                } else {
+                    Row(model: item)
+                        .id(item.id)
+                        .onTapGesture {
+                            openFullScreen(item)
+                        }
+                }
             }
         }, header: {
             HStack {
@@ -30,7 +44,7 @@ struct FeatureList: View {
             print("onDismiss")
             edit = false
         }, content: {
-            FeatureListDialog()
+            FeatureListDialog(models: $model)
         })
     }
 }
@@ -44,7 +58,7 @@ struct FeatureList: View {
                     Text("Tap to open screen")
                 }
                 
-                FeatureList()
+                FeatureList(model: Binding.constant(mockData), openFullScreen: { x in })
             }
         }
         .navigationViewStyle(.stack)

@@ -11,9 +11,31 @@ struct FeatureListDialog: View {
     @Environment(\.dismiss) private var dismiss
     
     @State
-    var data: [Model] = mockData
+    private var editMode: EditMode = .active
     
-    @State private var editMode: EditMode = .active
+    @Binding
+    var models: [Model]
+    
+    var fixedModels: [Model] {
+        get {
+            guard let otherIndex: Int = models.firstIndex(where: { element in
+                element == Model.other
+            })
+            else { return [] }
+            
+            var fixed: [Model] = []
+            
+            for model in models {
+                if let itemIndex: Int = models.firstIndex(where: { element in
+                    element == model
+                }), itemIndex < otherIndex,
+                   model != Model.selected {
+                    fixed.append(model)
+                }
+            }
+            return fixed
+        }
+    }
     
     var body: some View {
         if #available(iOS 16.0, *) {
@@ -33,49 +55,27 @@ struct FeatureListDialog: View {
     var content: some View {
         VStack {
             List {
-                Section {
-                    ForEach(data.prefix(3), id: \.title) { item in
-                        HStack(spacing: 8) {
-                            Button(action: { }) {
-                                Image(systemName: "minus.circle.fill")
-                                    .tint(Color(UIColor.systemRed))
-                            }
-                            Row(model: item)
-                                .frame(maxWidth: .infinity)
-                            Spacer()
-                        }
-                    }
-                    .onMove { moveItem(from: $0, to: $1) }
-                    //                        .onDelete { deleteItem(at: $0) }
+                ForEach(models, id: \.id) { model in
+                    Row(model: model)
+                        .moveDisabled(model == Model.other || model == Model.selected)
+                        .id(model.id)
                 }
-                Section(header: Text("Other")){
-                    ForEach(data.suffix(data.count - 3), id: \.title) { item in
-                        HStack(spacing: 8) {
-                            Button(action: { }) {
-                                Image(systemName: "plus.circle.fill")
-                                    .tint(Color(UIColor.systemGreen))
-                            }
-                            Row(model: item)
-                        }
-                    }
-                    .onMove { moveItem(from: $0, to: $1) }
-                    //                        .onDelete { deleteItem(at: $0) }
-                }
-                
+                .onMove(perform: { indices, newOffset in
+                    moveItem(from: indices, to: newOffset)
+                })
             }
-            .listRowInsets(.init(top: 0, leading: 0, bottom: 0, trailing: 0))
             VStack {
                 Text("Navigation preview")
                     .font(.title2)
-                TabView(selection: .constant(-1)) {
-                    ForEach(data.prefix(3), id: \.title) { item in
+                    .bold()
+                TabView(selection: .constant("Plan")) {
+                    ForEach(fixedModels, id: \.title) { item in
                         Text("")
                             .tabItem {
                                 Image(systemName: item.image)
                                 Text(item.title)
                             }
                             .tag(item.id)
-                            .tint(.accentColor)
                     }
                     Text("")
                         .tabItem {
@@ -83,52 +83,48 @@ struct FeatureListDialog: View {
                             Text("profile")
                         }
                         .tag("profile")
-                        .tint(.accentColor)
                 }
+                .tint(Color.secondary)
                 .disabled(true)
                 .frame(height: 44)
                 .frame(maxWidth: .infinity)
             }
         }
-            
-            //.listStyle(.grouped)
-            .navigationTitle("Edit navigation")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(action: { dismiss() }) {
-                        Image(systemName: "xmark")
-                    }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    EditButton()
+        .navigationTitle("Edit navigation")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button(action: { dismiss() }) {
+                    Image(systemName: "xmark")
                 }
             }
-            .deleteDisabled(true)
-            //You need to be careful, and make sure .environment(\.editMode, self.$isEditMode) comes after .navigationBarItems(trailing: EditButton()).
-            //https://stackoverflow.com/a/57498356/2060780
-            .environment(\.editMode, $editMode)
-            //.frame(maxHeight: 300)    
-            .onChange(of: editMode, perform: { value in
-              if value.isEditing {
-                 // Entering edit mode (e.g. 'Edit' tapped)
-              } else {
-                 // Leaving edit mode (e.g. 'Done' tapped)
-                  dismiss()
-              }
-            })
+            ToolbarItem(placement: .confirmationAction) {
+                EditButton()
+            }
+        }
+        .deleteDisabled(true)
+        .environment(\.editMode, $editMode)
+        .onChange(of: editMode, perform: { value in
+            if value.isEditing {
+            } else {
+                dismiss()
+            }
+        })
     }
     
-    func moveItem(from source: IndexSet, to destination: Int) {
-        //fruits.move(fromOffsets: source, toOffset: destination)
-        print("move \(source.first) -> \(destination)")
-    }
-    func deleteItem(at offset: IndexSet) {
-        //fruits.remove(atOffsets: offset)
-        print("delete \(offset.first)")
+    private func moveItem(from source: IndexSet, to destination: Int) {
+        models.move(fromOffsets: source, toOffset: destination)
+        if let moveIndex = source.first,
+           let otherIndex: Int = models.firstIndex(where: { element in
+               element == Model.other
+           }),
+           otherIndex < 3,
+           moveIndex <= otherIndex {
+            models.move(fromOffsets: IndexSet(integer: destination - 1), toOffset: moveIndex)
+        }
     }
 }
 
 #Preview {
-    FeatureListDialog()
+    FeatureListDialog(models: Binding<[Model]>.constant(mockData))
 }
