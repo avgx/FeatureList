@@ -19,18 +19,13 @@ public struct FeatureList: View {
     public var body: some View {
         Section(content: {
             ForEach(model, id: \.title) { item in
-                if item == Model.other || item == Model.selected {
-                    Text(item.title)
-                        .font(.bold(.title2)())
-                        .padding([.top])
-                        .id(item.id)
-                } else {
-                    Row(model: item)
-                        .id(item.id)
-                        .onTapGesture {
+                Row(model: item)
+                    .id(item.id)
+                    .onTapGesture {
+                        if item != Model.other && item != Model.selected {
                             openFullScreen(item)
                         }
-                }
+                    }
             }
         }, header: {
             HStack {
