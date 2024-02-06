@@ -11,10 +11,13 @@ import FeatureList
 struct ContentView: View {
     
     @AppStorage("settingsData")
-    private var settingsData: [Model] = testData
+    private var settingsData: [FeatureList.Model] = testData
     
     @State
-    private var selectedItem: Model?
+    private var selectedItem: FeatureList.Model?
+    
+    @State
+    private var edit = false
     
     var body: some View {
         Group {
@@ -24,40 +27,46 @@ struct ContentView: View {
                         Text("Select screens order with button")
                         Text("Tap to open screen")
                     }
-                    FeatureList(model: $settingsData, openFullScreen: openFullScreen)
-                        .fullScreenCover(item: $selectedItem) { item in
-                            NavigationView {
-                                Text(item.title)
-                                    .toolbar {
-                                        ToolbarItem(placement: .cancellationAction) {
-                                            Button(action: {
-                                                selectedItem = nil
-                                            }) {
-                                                Image(systemName: "xmark")
-                                            }
-                                        }
-                                    }
-                            }
-                        }
+                    FeatureList(model: $settingsData, edit: $edit, openFullScreen: openFullScreen)
+                        
                 }
                 .navigationViewStyle(.stack)
             }
             .tint(Color.orange)
         }
-        
+        .sheet(isPresented: $edit, onDismiss: {
+            print("onDismiss")
+            edit = false
+        }, content: {
+            FeatureListDialog(models: $settingsData)
+        })
+        .fullScreenCover(item: $selectedItem) { item in
+            NavigationView {
+                Text(item.title)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button(action: {
+                                selectedItem = nil
+                            }) {
+                                Image(systemName: "xmark")
+                            }
+                        }
+                    }
+            }
+        }
     }
 
-    private func openFullScreen(item : Model) {
+    private func openFullScreen(item: FeatureList.Model) {
         selectedItem = item
     }
 }
 
-let testData: [Model] = [
-                .init(id: "Selected", image: "x.circle", title: "Selected"),
+let testData: [FeatureList.Model] = [
+                .selected,
                 .init(id: "Map", image: "globe", title: "Map"),
                 .init(id: "Plan", image: "map", title: "Plan"),
                 .init(id: "Dashboards", image: "square.grid.3x3.fill", title: "Dashboards"),
-                .init(id: "Other", image: "x.circle", title: "Other"),
+                .other,
                 .init(id: "Cameras", image: "video.fill", title: "Cameras"),
                 .init(id: "All cameras", image: "video.fill.badge.ellipsis", title: "All cameras"),
                 .init(id: "Actions", image: "bolt.fill", title: "Actions"),

@@ -5,20 +5,34 @@ import SwiftUI
 public struct FeatureList: View {
     let openFullScreen: (Model) -> ()
     
-    public init(model: Binding<[Model]>, openFullScreen: @escaping (Model) -> ()) {
+    public init(model: Binding<[Model]>, edit: Binding<Bool>, openFullScreen: @escaping (Model) -> ()) {
         self._model = model
+        self._edit = edit
         self.openFullScreen = openFullScreen
     }
     
-    @State
-    private var edit: Bool = false
+    @Binding
+    private var edit: Bool
     
     @Binding
     public var model: [Model]
     
+    var other: [Model] {
+        get {
+            guard let otherIndex: Int = model.firstIndex(where: { element in
+                element == .other
+            })
+            else { return [] }
+            
+            var list = model.suffix(from: otherIndex)
+            list.removeFirst()
+            return Array(list)
+        }
+    }
+    
     public var body: some View {
         Section(content: {
-            ForEach(model, id: \.title) { item in
+            ForEach(other, id: \.title) { item in
                 Row(model: item)
                     .id(item.id)
                     .onTapGesture {
@@ -35,12 +49,7 @@ public struct FeatureList: View {
                 }
             }
         })
-        .sheet(isPresented: $edit, onDismiss: {
-            print("onDismiss")
-            edit = false
-        }, content: {
-            FeatureListDialog(models: $model)
-        })
+        
     }
 }
 
@@ -53,7 +62,7 @@ public struct FeatureList: View {
                     Text("Tap to open screen")
                 }
                 
-                FeatureList(model: Binding.constant(mockData), openFullScreen: { x in })
+                FeatureList(model: Binding.constant(mockData), edit: .constant(false), openFullScreen: { x in })
             }
         }
         .navigationViewStyle(.stack)

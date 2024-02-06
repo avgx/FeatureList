@@ -7,37 +7,44 @@
 
 import SwiftUI
 
-struct FeatureListDialog: View {
+public struct FeatureListDialog: View {
     @Environment(\.dismiss) private var dismiss
     
     @State
     private var editMode: EditMode = .active
     
     @Binding
-    var models: [Model]
+    var models: [FeatureList.Model]
     
-    var fixedModels: [Model] {
+    public init(models: Binding<[FeatureList.Model]>) {
+        self._models = models
+    }
+    
+    var fixedModels: [FeatureList.Model] {
         get {
-            guard let otherIndex: Int = models.firstIndex(where: { element in
-                element == Model.other
-            })
-            else { return [] }
-            
-            var fixed: [Model] = []
-            
-            for model in models {
-                if let itemIndex: Int = models.firstIndex(where: { element in
-                    element == model
-                }), itemIndex < otherIndex,
-                   model != Model.selected {
-                    fixed.append(model)
-                }
+            guard let otherIndex: Int = models.firstIndex(where: { $0 == .other }) else {
+                return []
             }
-            return fixed
+            
+            var list = models.prefix(upTo: otherIndex)
+            list.removeFirst()
+            return Array(list)
         }
     }
     
-    var body: some View {
+    var other: [FeatureList.Model] {
+        get {
+            guard let otherIndex: Int = models.firstIndex(where: { $0 == .other }) else {
+                return []
+            }
+            
+            var list = models.suffix(from: otherIndex)
+            list.removeFirst()
+            return Array(list)
+        }
+    }
+    
+    public var body: some View {
         if #available(iOS 16.0, *) {
             NavigationStack {
                 content
@@ -56,8 +63,8 @@ struct FeatureListDialog: View {
         VStack {
             List {
                 ForEach(models, id: \.id) { model in
-                    Row(model: model)
-                        .moveDisabled(model == Model.other || model == Model.selected)
+                    FeatureList.Row(model: model)
+                        .moveDisabled(model == .other || model == .selected)
                         .id(model.id)
                 }
                 .onMove(perform: { indices, newOffset in
@@ -114,17 +121,35 @@ struct FeatureListDialog: View {
     
     private func moveItem(from source: IndexSet, to destination: Int) {
         models.move(fromOffsets: source, toOffset: destination)
+        let count = fixedModels.count
+        
         if let moveIndex = source.first,
-           let otherIndex: Int = models.firstIndex(where: { element in
-               element == Model.other
-           }),
-           otherIndex < 3,
-           moveIndex <= otherIndex {
+           (count < 2 || count > 4) {
             models.move(fromOffsets: IndexSet(integer: destination - 1), toOffset: moveIndex)
         }
     }
 }
 
+let mockData: [FeatureList.Model] = [
+                .selected,
+                .init(id: "Map", image: "globe", title: "Map"),
+                .init(id: "Plan", image: "map", title: "Plan"),
+                .init(id: "Dashboards", image: "square.grid.3x3.fill", title: "Dashboards"),
+                .other,
+                .init(id: "Cameras", image: "video.fill", title: "Cameras"),
+                .init(id: "All cameras", image: "video.fill.badge.ellipsis", title: "All cameras"),
+                .init(id: "Actions", image: "bolt.fill", title: "Actions"),
+                .init(id: "Events", image: "rectangle.3.group.fill", title: "Events"),
+                .init(id: "Alerts", image: "exclamationmark.triangle", title: "Alerts"),
+                .init(id: "Face search", image: "person.crop.circle.badge.questionmark", title: "Face search"),
+                .init(id: "Lpr search", image: "car", title: "Lpr search"),
+                .init(id: "Persons", image: "person.text.rectangle", title: "Persons"),
+                .init(id: "Translation", image: "dot.radiowaves.left.and.right", title: "Translation"),
+                .init(id: "Audit", image: "lock.open.display", title: "Audit"),
+                .init(id: "Bookmarks", image: "bookmark", title: "Bookmarks"),
+                .init(id: "Statistics", image: "chart.xyaxis.line", title: "Statistics")
+            ]
+
 #Preview {
-    FeatureListDialog(models: Binding<[Model]>.constant(mockData))
+    FeatureListDialog(models: Binding<[FeatureList.Model]>.constant(mockData))
 }
